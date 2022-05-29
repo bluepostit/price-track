@@ -8,8 +8,7 @@ const query = `
   CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL,
-    description VARCHAR,
-    parent_id INT NULL REFERENCES products (id) ON DELETE SET NULL
+    description VARCHAR
   );
 `
 pool.query(query)

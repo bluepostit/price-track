@@ -2,15 +2,18 @@ require('dotenv').config()
 
 const Pool = require('pg').Pool
 const pool = new Pool()
+let client
 
 const clearAllData = async () => {
   const query = `
     DELETE FROM stores CASCADE;
     DELETE FROM cities CASCADE;
     DELETE FROM countries CASCADE;
+    DELETE FROM companies CASCADE;
     DELETE FROM categories CASCADE;
+    DELETE FROM products CASCADE;
   `
-  return await pool.query(query)
+  return await client.query(query)
 }
 
 const createCountries = async () => {
@@ -25,40 +28,40 @@ const createCountries = async () => {
     ('Spain'),
     ('United Kingdom');
   `
-  return pool.query(query)
+  return client.query(query)
 }
 
 const getCountries = async () => {
   const query = 'SELECT * FROM countries'
-  const response = await pool.query(query)
+  const response = await client.query(query)
   return response.rows
 }
 
 const getCountryByName = async (name) => {
   const query = 'SELECT * FROM countries WHERE name ILIKE $1'
-  const response = await pool.query(query, [name])
+  const response = await client.query(query, [name])
   return response.rows[0]
 }
 
 const getCityByName = async (name) => {
   const query = 'SELECT * FROM cities WHERE name ILIKE $1'
-  const response = await pool.query(query, [name])
+  const response = await client.query(query, [name])
   return response.rows[0]
 }
 
 const getCompanyByName = async (name) => {
   const query = 'SELECT * FROM companies WHERE name ILIKE $1'
-  const response = await pool.query(query, [name])
+  const response = await client.query(query, [name])
   return response.rows[0]
 }
 const getCategoryByName = async (name) => {
-  const query = 'SELECT * FROM categories WHERE name ILIKE $1'
-  const response = await pool.query(query, [name])
-  return response.rows[0]
-}
+  const query = "SELECT * FROM categories WHERE name ILIKE $1";
+  const response = await client.query(query, [name]);
+  return response.rows[0];
+};
 
 const createCities = async () => {
-  await pool.query('DELETE FROM cities CASCADE')
+  await client.query('DELETE FROM cities CASCADE')
 
   const data = [
     {
@@ -93,7 +96,7 @@ const createCities = async () => {
       INSERT INTO cities ("name", "country_id")
       VALUES ($1, $2)
     `
-    return pool.query(query, [city, countryData.id])
+    return client.query(query, [city, countryData.id])
   })
   return await Promise.all(promises)
 }
@@ -109,7 +112,7 @@ const createCompanies = async () => {
 
   const promises = data.map(async (name) => {
     const query = `INSERT INTO companies ("name") VALUES ($1)`
-    return pool.query(query, [name])
+    return client.query(query, [name])
   })
   return await Promise.all(promises)
 }
@@ -135,7 +138,7 @@ const createStores = async () => {
     const companyId = (await getCompanyByName(company)).id
     const query = `INSERT INTO stores ("name", "city_id", "company_id", "location")
       VALUES ($1, $2, $3, $4);`
-      return pool.query(query, [name, cityId, companyId, location])
+      return client.query(query, [name, cityId, companyId, location])
   })
   return await Promise.all(promises)
 }
@@ -150,30 +153,53 @@ const createCategories = async () => {
       parent: 'dairy'
     },
     {
+      name: 'yogurt',
+      parent: 'dairy'
+    },
+    {
       name: 'fruits',
     },
     {
       name: 'apples',
       parent: 'fruits'
-    },
-    {
-      name: 'granny smith apples',
-      parent: 'apples'
     }
   ]
+
+  const client = await pool.connect()
 
   data.forEach(async ({ name, parent: parentName }) => {
     let parentId = null
     if (parentName) {
-      parentId = (await getCategoryByName(parentName)).id
+      const parent = await getCategoryByName(parentName, client);
+      parentId = parent ? parent.id : parentId
     }
 
     const query = `INSERT INTO categories (name, parent_id) VALUES ($1, $2);`
-    await pool.query(query, [name, parentId])
+    return await client.query(query, [name, parentId])
   })
 }
 
+const createProducts = async () => {
+  const data = [
+    {
+      name: 'granny smith apples',
+      description: 'green apples, sweet and sour taste'
+    },
+    {
+      name: 'plain yogurt 500ml jug',
+      description: ''
+    }
+  ]
+
+  const promises = data.map(async ({ name, description }) => {
+    const query = `INSERT INTO products (name, description) VALUES ($1, $2);`
+    return await client.query(query, [name, description])
+  })
+  await Promise.all(promises)
+}
+
 const main = async () => {
+  client = await pool.connect()
   console.log(' ==== Seeding for development ====')
   console.log('Clearing data')
   await clearAllData()
@@ -188,8 +214,10 @@ const main = async () => {
   await createStores()
   console.log('> Creating product categories')
   await createCategories()
+  console.log('> Creating products')
+  await createProducts()
   console.log('Done')
-  pool.end()
+  client.release()
 }
 
 main()
