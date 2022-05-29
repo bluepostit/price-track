@@ -12,9 +12,12 @@
     "express": "~4.16.1",
     "hbs": "^4.2.0",
     "http-errors": "~1.6.3",
-    "morgan": "~1.9.1"
+    "morgan": "~1.9.1",
+    "node-postgres": "^0.6.2",
+    "pg": "^8.7.3"
   },
   "devDependencies": {
+    "dotenv": "^16.0.1",
     "standard": "^17.0.0"
   }
 }
