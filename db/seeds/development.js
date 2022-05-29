@@ -79,15 +79,15 @@ const createCities = async () => {
   return await Promise.all(promises)
 }
 
-console.log(' ==== Seeding ====')
-clearAllData()
-  .then(() => {
-    createCountries()
-  })
-  .then(async () => {
-    await createCities()
-  })
-  .then(() => {
-    console.log(' ====  Done   ====')
-    pool.end()
-  })
+const main = async () => {
+  console.log(' ==== Seeding for development ====')
+  console.log('Clearing data')
+  await clearAllData()
+  console.log('Inserting data')
+  await createCountries()
+  await createCities()
+  console.log('Done')
+  pool.end()
+}
+
+main()
