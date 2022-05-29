@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "lint": "standard --fix"
+    "lint": "standard --fix",
+    "dev:seed": "node db/seeds/development.js"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",

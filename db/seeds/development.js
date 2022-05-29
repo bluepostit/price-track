@@ -5,6 +5,7 @@ const pool = new Pool()
 
 const clearAllData = async () => {
   const query = `
+    DELETE FROM stores CASCADE;
     DELETE FROM cities CASCADE;
     DELETE FROM countries CASCADE;
   `
@@ -34,6 +35,18 @@ const getCountries = async () => {
 
 const getCountryByName = async (name) => {
   const query = 'SELECT * FROM countries WHERE name ILIKE $1'
+  const response = await pool.query(query, [name])
+  return response.rows[0]
+}
+
+const getCityByName = async (name) => {
+  const query = 'SELECT * FROM cities WHERE name ILIKE $1'
+  const response = await pool.query(query, [name])
+  return response.rows[0]
+}
+
+const getCompanyByName = async (name) => {
+  const query = 'SELECT * FROM companies WHERE name ILIKE $1'
   const response = await pool.query(query, [name])
   return response.rows[0]
 }
@@ -79,13 +92,61 @@ const createCities = async () => {
   return await Promise.all(promises)
 }
 
+const createCompanies = async () => {
+  const data = [
+    'Aldi',
+    'Penny',
+    'MediaMarkt',
+    'Edeka',
+    'Rewe'
+  ]
+
+  const promises = data.map(async (name) => {
+    const query = `INSERT INTO companies ("name") VALUES ($1)`
+    return pool.query(query, [name])
+  })
+  return await Promise.all(promises)
+}
+
+const createStores = async () => {
+  const data = [
+    {
+      name: 'MediaMarkt Alexanderplatz',
+      city: 'Berlin',
+      company: 'MediaMarkt',
+      location: 'Alexanderplatz'
+    },
+    {
+      name: 'Aldi Nord Rüdersdorfer Straße',
+      city: 'Berlin',
+      company: 'Aldi',
+      location: 'Rüdersdorfer Straße'
+    }
+  ]
+
+  const promises = data.map(async ({ name, city, company, location }) => {
+    const cityId = (await getCityByName(city)).id
+    const companyId = (await getCompanyByName(company)).id
+    const query = `INSERT INTO stores ("name", "city_id", "company_id", "location")
+      VALUES ($1, $2, $3, $4);`
+      return pool.query(query, [name, cityId, companyId, location])
+  })
+  return await Promise.all(promises)
+}
+
 const main = async () => {
   console.log(' ==== Seeding for development ====')
   console.log('Clearing data')
   await clearAllData()
   console.log('Inserting data')
+  console.log('> Creating countries')
   await createCountries()
+  console.log('> Creating cities')
   await createCities()
+  console.log('> Creating companies')
+  await createCompanies()
+  console.log('> Creating stores')
+  await createStores()
   console.log('Done')
   pool.end()
 }
