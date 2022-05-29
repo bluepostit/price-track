@@ -1,7 +1,9 @@
 require('dotenv').config()
 
 const Pool = require('pg').Pool
-const pool = new Pool()
+const pool = new Pool({
+  idleTimeoutMillis: 3000
+})
 let client
 
 const clearAllData = async () => {
@@ -164,8 +166,6 @@ const createCategories = async () => {
       parent: 'fruits'
     }
   ]
-
-  const client = await pool.connect()
 
   data.forEach(async ({ name, parent: parentName }) => {
     let parentId = null
