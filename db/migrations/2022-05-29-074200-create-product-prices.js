@@ -6,7 +6,7 @@ const pool = new Pool()
 const query = `
   DROP TABLE IF EXISTS product_prices;
   CREATE TABLE product_prices (
-    id int PRIMARY KEY NOT NULL,
+    id SERIAL PRIMARY KEY NOT NULL,
     product_id INT NOT NULL REFERENCES products (id),
     store_id INT NOT NULL REFERENCES stores (id),
     date TIME WITH TIME ZONE,

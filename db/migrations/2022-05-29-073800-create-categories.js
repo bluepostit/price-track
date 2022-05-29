@@ -4,9 +4,9 @@ const Pool = require('pg').Pool
 const pool = new Pool()
 
 const query = `
-  DROP TABLE IF EXISTS categories;
+  DROP TABLE IF EXISTS categories CASCADE;
   CREATE TABLE categories (
-    id int PRIMARY KEY NOT NULL,
+    id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL,
     parent_id INT NULL REFERENCES categories (id) ON DELETE SET NULL
   );
