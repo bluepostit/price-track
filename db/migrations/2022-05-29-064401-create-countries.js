@@ -4,8 +4,8 @@ const Pool = require('pg').Pool
 const pool = new Pool()
 
 const query = `
-  DROP TABLE IF EXISTS countries;
-  CREATE TABLE countries (id int PRIMARY KEY NOT NULL, name VARCHAR NOT NULL);
+  DROP TABLE IF EXISTS countries CASCADE;
+  CREATE TABLE countries (id SERIAL PRIMARY KEY, name VARCHAR NOT NULL);
 `
 pool.query(query)
   .then(() => {
