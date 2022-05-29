@@ -8,6 +8,7 @@ const clearAllData = async () => {
     DELETE FROM stores CASCADE;
     DELETE FROM cities CASCADE;
     DELETE FROM countries CASCADE;
+    DELETE FROM categories CASCADE;
   `
   return await pool.query(query)
 }
@@ -47,6 +48,11 @@ const getCityByName = async (name) => {
 
 const getCompanyByName = async (name) => {
   const query = 'SELECT * FROM companies WHERE name ILIKE $1'
+  const response = await pool.query(query, [name])
+  return response.rows[0]
+}
+const getCategoryByName = async (name) => {
+  const query = 'SELECT * FROM categories WHERE name ILIKE $1'
   const response = await pool.query(query, [name])
   return response.rows[0]
 }
@@ -134,6 +140,39 @@ const createStores = async () => {
   return await Promise.all(promises)
 }
 
+const createCategories = async () => {
+  const data = [
+    {
+      name: 'dairy'
+    },
+    {
+      name: 'milk',
+      parent: 'dairy'
+    },
+    {
+      name: 'fruits',
+    },
+    {
+      name: 'apples',
+      parent: 'fruits'
+    },
+    {
+      name: 'granny smith apples',
+      parent: 'apples'
+    }
+  ]
+
+  data.forEach(async ({ name, parent: parentName }) => {
+    let parentId = null
+    if (parentName) {
+      parentId = (await getCategoryByName(parentName)).id
+    }
+
+    const query = `INSERT INTO categories (name, parent_id) VALUES ($1, $2);`
+    await pool.query(query, [name, parentId])
+  })
+}
+
 const main = async () => {
   console.log(' ==== Seeding for development ====')
   console.log('Clearing data')
@@ -147,6 +186,8 @@ const main = async () => {
   await createCompanies()
   console.log('> Creating stores')
   await createStores()
+  console.log('> Creating product categories')
+  await createCategories()
   console.log('Done')
   pool.end()
 }
