@@ -56,11 +56,18 @@ const getCompanyByName = async (name) => {
   const response = await client.query(query, [name])
   return response.rows[0]
 }
+
 const getCategoryByName = async (name) => {
   const query = "SELECT * FROM categories WHERE name ILIKE $1";
-  const response = await client.query(query, [name]);
-  return response.rows[0];
-};
+  const response = await client.query(query, [name])
+  return response.rows[0]
+}
+
+const getProductByName = async (name) => {
+  const query = "SELECT * FROM products WHERE name ILIKE $1";
+  const response = await client.query(query, [name])
+  return response.rows[0]
+}
 
 const createCities = async () => {
   await client.query('DELETE FROM cities CASCADE')
@@ -170,7 +177,7 @@ const createCategories = async () => {
   data.forEach(async ({ name, parent: parentName }) => {
     let parentId = null
     if (parentName) {
-      const parent = await getCategoryByName(parentName, client);
+      const parent = await getCategoryByName(parentName, client)
       parentId = parent ? parent.id : parentId
     }
 
@@ -198,6 +205,30 @@ const createProducts = async () => {
   await Promise.all(promises)
 }
 
+const createProductCategories = async () => {
+  const data = [
+    {
+      product: 'granny smith apples',
+      category: 'apples'
+    },
+    {
+      product: 'plain yogurt 500ml jug',
+      category: 'yogurt'
+    }
+  ]
+  const promises = data.map(async ({ product: productName, category: categoryName }) => {
+    const product = productName ? await getProductByName(productName) : null
+    const category = categoryName ? await getCategoryByName(categoryName) : null
+    const productId = product ? product.id : null
+    const categoryId = category ? category.id : null
+
+    const query = `INSERT INTO product_categories (product_id, category_id)
+      VALUES ($1, $2);`
+    return await client.query(query, [productId, categoryId])
+  })
+  await Promise.all(promises)
+}
+
 const main = async () => {
   client = await pool.connect()
   console.log(' ==== Seeding for development ====')
@@ -216,6 +247,8 @@ const main = async () => {
   await createCategories()
   console.log('> Creating products')
   await createProducts()
+  console.log('> Creating product_categories')
+  await createProductCategories()
   console.log('Done')
   client.release()
 }
