@@ -9,7 +9,7 @@ const query = `
     id SERIAL PRIMARY KEY NOT NULL,
     product_id INT NOT NULL REFERENCES products (id),
     store_id INT NOT NULL REFERENCES stores (id),
-    date TIME WITH TIME ZONE,
+    date TIMESTAMP NOT NULL,
     price NUMERIC NOT NULL DEFAULT 0
   );
 `

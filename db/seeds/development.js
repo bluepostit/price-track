@@ -8,10 +8,12 @@ let client
 
 const clearAllData = async () => {
   const query = `
+    DELETE FROM product_prices CASCADE;
     DELETE FROM stores CASCADE;
     DELETE FROM cities CASCADE;
     DELETE FROM countries CASCADE;
     DELETE FROM companies CASCADE;
+    DELETE FROM product_categories CASCADE;
     DELETE FROM categories CASCADE;
     DELETE FROM products CASCADE;
   `
@@ -66,6 +68,12 @@ const getCategoryByName = async (name) => {
 const getProductByName = async (name) => {
   const query = "SELECT * FROM products WHERE name ILIKE $1";
   const response = await client.query(query, [name])
+  return response.rows[0]
+}
+
+const getStoreByNameAndLocation = async (name, location) => {
+  const query = "SELECT * FROM stores WHERE name ILIKE $1 AND location ILIKE $2"
+  const response = await client.query(query, [name, location])
   return response.rows[0]
 }
 
@@ -139,6 +147,12 @@ const createStores = async () => {
       city: 'Berlin',
       company: 'Aldi',
       location: 'Rüdersdorfer Straße'
+    },
+    {
+      name: 'Rewe Supermarkt Am Ostbahnhof 9',
+      city: 'Berlin',
+      company: 'Rewe',
+      location: 'Am Ostbahnhof 9'
     }
   ]
 
@@ -229,6 +243,57 @@ const createProductCategories = async () => {
   await Promise.all(promises)
 }
 
+const createProductPrices = async () => {
+  const data = [
+    {
+      product: 'granny smith apples',
+      store: {
+        name: 'Aldi Nord Rüdersdorfer Straße',
+        location: 'Rüdersdorfer Straße'
+      },
+      date: new Date(2022, 4, 10),
+      price: 1.8
+    },
+    {
+      product: 'granny smith apples',
+      store: {
+        name: 'Aldi Nord Rüdersdorfer Straße',
+        location: 'Rüdersdorfer Straße'
+      },
+      date: new Date(2022, 5, 1),
+      price: 2.1
+    },
+    {
+      product: 'granny smith apples',
+      store: {
+        name: 'Rewe Supermarkt Am Ostbahnhof 9',
+        location: 'Am Ostbahnhof 9'
+      },
+      date: new Date(2022, 5, 6),
+      price: 2.35
+    }
+  ]
+
+  const promises = data.map(async (priceData) => {
+    const product = await getProductByName(priceData.product)
+    const store = await getStoreByNameAndLocation(
+      priceData.store.name,
+      priceData.store.location
+    )
+
+    const productId = product ? product.id : null
+    const storeId = store ? store.id : null
+    const date = priceData.date
+    const price = priceData.price
+
+    const query = `INSERT INTO product_prices
+      (product_id, store_id, date, price)
+      VALUES ($1, $2, $3, $4);`
+    return await client.query(query, [productId, storeId, date, price])
+  })
+  await Promise.all(promises)
+}
+
 const main = async () => {
   client = await pool.connect()
   console.log(' ==== Seeding for development ====')
@@ -249,6 +314,8 @@ const main = async () => {
   await createProducts()
   console.log('> Creating product_categories')
   await createProductCategories()
+  console.log('> Creating product prices')
+  await createProductPrices()
   console.log('Done')
   client.release()
 }
